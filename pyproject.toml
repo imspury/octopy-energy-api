@@ -1,0 +1,128 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "octopy-energy-api"
+dynamic = ["version"]
+description = 'Async Python client library for the Octopus Energy REST API'
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = [
+  "octopus-energy",
+  "energy-monitoring",
+  "smart-meter",
+  "agile-tariff",
+  "api-client",
+  "async",
+  "electricity",
+  "gas",
+]
+authors = [
+  { name = "Sam P (Spury)", email = "s.pur@outlook.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Home Automation",
+  "Typing :: Typed",
+]
+dependencies = [
+  "httpx>=0.27.0",
+  "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4.0",
+  "pytest-asyncio>=0.21.0",
+  "pytest-cov>=4.1.0",
+  "respx>=0.20.0",
+  "mypy>=1.7.0",
+  "ruff>=0.1.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/imspury/octopy-energy-api#readme"
+Source = "https://github.com/imspury/octopy-energy-api"
+
+[tool.hatch.version]
+path = "src/octopy/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/octopy tests}"
+
+[tool.coverage.run]
+source_pkgs = ["octopy", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/octopy/__about__.py",
+]
+
+[tool.coverage.paths]
+octopy = ["src/octopy", "*/octopy/src/octopy"]
+tests = ["tests", "*/octopy/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = [
+  "--strict-markers",
+  "--strict-config",
+  "--cov=src/octopy",
+  "--cov-report=term-missing",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+]
+ignore = [
+  "E501",  # line too long, handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports in __init__.py
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
