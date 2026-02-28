@@ -58,6 +58,9 @@ Source = "https://github.com/imspury/octopy-energy-api"
 [tool.hatch.version]
 path = "src/octopy/__about__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/octopy"]
+
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
