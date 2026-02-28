@@ -7,6 +7,7 @@ import httpx
 
 # Custom imports
 from octopy.config import Settings
+from octopy.exceptions import OctopusAPIError, OctopusAuthError
 
 class Octopy:
     """Async client for interacting with the Octopus Energy REST API.
@@ -53,3 +54,44 @@ class Octopy:
     async def close(self) -> None:
         """Close the HTTP client connection."""
         await self.client.aclose()
+    
+    async def _get_url(self, url: str) -> httpx.Response:
+        """Fetch data from an arbitrary URL.
+
+        This is used internally for pagination to follow 'next' URLs.
+
+        Args:
+            url: Full URL to fetch (can be absolute or relative to base URL).
+        
+        Returns:
+            The HTTP response object.
+
+        Raises:
+            OctopusAuthError: If authentication fails.
+            OctopusAPIError: If the API returns a non-2xx response.
+        """
+        response = await self.client.get(url)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+        
+        return response
+    
+    def _handle_response_error(self, response: httpx.Response) -> None:
+        """Handle non-2xx responses from the API.
+
+        Args:
+            response: The HTTP response object.
+        
+        Raises:
+            OctopusAuthError: If the response status is 401 or 403.
+            OctopusAPIError: For any other non-2xx status code.
+        """
+        if response.status_code in (401, 403):
+            raise OctopusAuthError(
+                detail=f"Authentication failed: {response.text}"
+            )
+        raise OctopusAPIError(
+            status_code=response.status_code,
+            detail=f"API request failed: {response.text}"
+        )
