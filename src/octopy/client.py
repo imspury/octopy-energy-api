@@ -8,6 +8,9 @@ import httpx
 # Custom imports
 from octopy.config import Settings
 from octopy.exceptions import OctopusAPIError, OctopusAuthError
+from octopy.models import (
+    Account,
+)
 
 class Octopy:
     """Async client for interacting with the Octopus Energy REST API.
@@ -95,3 +98,28 @@ class Octopy:
             status_code=response.status_code,
             detail=f"API request failed: {response.text}"
         )
+
+    async def get_account(self, account_number: str | None = None) -> Account:
+        """Fetch account data including properties and meter points.
+        
+        Args:
+            account_number: The account number (e.g. A-XXXXXXXX).
+                If None, uses the account number from settings.
+        
+        Returns:
+            An Account object with properties and meter points.
+        
+        Raises:
+            OctopusAuthError: If authentication fails.
+            OctopusAPIError: If the API returns a non-2xx response.
+        """
+        acc_num = account_number or self.settings.octopus_account_number
+        url = f"/accounts/{acc_num}/"
+
+        response = await self.client.get(url)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+        
+        data = response.json()
+        return Account(**data)
