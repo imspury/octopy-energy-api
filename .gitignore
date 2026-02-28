@@ -1,0 +1,37 @@
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Linters
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
