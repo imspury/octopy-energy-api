@@ -1,10 +1,40 @@
 """Pydantic models for Octopus Energy API requests and responses."""
 
-# Standard library imports
+# Standard library import
 from datetime import datetime
 
-# Third-party imports
+# Third-party import
 from pydantic import BaseModel
+
+
+class ConsumptionInterval(BaseModel):
+    """Model for a consumption interval.
+
+    Attributes:
+        interval_start: Start of the consumption interval.
+        interval_end: End of the consumption interval.
+        consumption: Energy consumption in kWh for the interval.
+    """
+
+    interval_start: datetime
+    interval_end: datetime
+    consumption: float
+
+
+class ConsumptionResponse(BaseModel):
+    """Response model for consumption endpoint.
+    
+    Attributes:
+        count: Total number of results.
+        next: URL for next page of results, if any.
+        previous: URL for previous page of results, if any.
+        results: List of consumption intervals.
+    """
+
+    count: int
+    next: str | None = None
+    previous: str | None = None
+    results: list[ConsumptionInterval]
 
 
 class Register(BaseModel):
