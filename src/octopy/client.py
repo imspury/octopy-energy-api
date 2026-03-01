@@ -1,8 +1,8 @@
 # Standard library imports
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Literal
 
-# Third-party imports
+# Third-party import
 import httpx
 
 # Custom imports
@@ -10,6 +10,7 @@ from octopy.config import Settings
 from octopy.exceptions import OctopusAPIError, OctopusAuthError
 from octopy.models import (
     Account,
+    ConsumptionResponse,
 )
 
 class Octopy:
@@ -99,6 +100,24 @@ class Octopy:
             detail=f"API request failed: {response.text}"
         )
 
+    def _format_datetime(
+            self, dt: date | datetime, end_of_day: bool = False
+    ) -> str:
+        """Format a date or datetime for the API.
+        
+        Args:
+            dt: A date or datetime object.
+            end_of_day: If True and dt is a date, use 23:59:59 instead of 00:00:00.
+        
+        Returns:
+            ISO 8601 formatted string with UTC timezone indicator.
+        """
+        if isinstance(dt, datetime):
+            return dt.isoformat() + "Z" if dt.tzinfo is None else dt.isoformat()
+        else:
+            time_str = "T23:59:59Z" if end_of_day else "T00:00:00Z"
+            return f"{dt.isoformat()}{time_str}"
+
     async def get_account(self, account_number: str | None = None) -> Account:
         """Fetch account data including properties and meter points.
         
@@ -123,3 +142,67 @@ class Octopy:
         
         data = response.json()
         return Account(**data)
+    
+    async def get_consumption(
+        self,
+        meter_point: str,
+        serial_number: str,
+        fuel: Literal["electricity", "gas"] = "electricity",
+        period_from: date | datetime | None = None,
+        period_to: date | datetime | None = None,
+        page_size: int = 100,
+        order_by: str | None = None,
+        group_by: str | None = None,
+    ) -> ConsumptionResponse:
+        """Fetch consumption data for a specific meter point and serial number.
+        
+        Args:
+            meter_point: The meter point reference number.
+                For electricity: MPAN (Meter Point Administration Number).
+                For gas: MPRN (Meter Point Reference Number).
+            serial_number: The meter serial number.
+            fuel: The fuel type, either 'electricity' or 'gas' (default: 'electricity').
+            period_from: Start of the consumption period (inclusive).
+                Can be date (interpreted as midnight) or datetime for specific time.
+            period_to: End of the consumption period (inclusive).
+                Can be date (interpreted as end of day) or datetime for specific time.
+            page_size: Number of results per page (default 100, max 25000).
+            order_by: Order results by 'period' for earliest first.
+                Without this, latest records are returned first.
+            group_by: Aggregate data by 'day', 'week', 'month', or 'quarter'.
+                Aggregation is based on local time, not UTC.
+        
+        Returns:
+            A ConsumptionResponse with consumption intervals.
+
+        Note:
+            For gas: SMETS1 meters return consumption in kWh, while SMETS2 meters
+            return consumption in cubic meters.
+        
+        Raises:
+            OctopusAuthError: If authentication fails.
+            OctopusAPIError: If the API returns a non-2xx response.
+        """
+        if fuel == "electricity":
+            url = f"/electricity-meter-points/{meter_point}/meters/{serial_number}/consumption/"
+        else:
+            url = f"/gas-meter-points/{meter_point}/meters/{serial_number}/consumption/"
+        
+        params: dict[str, Any] = {"page_size": page_size}
+
+        if period_from:
+            params["period_from"] = self._format_datetime(period_from)
+        if period_to:
+            params["period_to"] = self._format_datetime(period_to, end_of_day=True)
+        if order_by:
+            params["order_by"] = order_by
+        if group_by:
+            params["group_by"] = group_by
+        
+        response = await self.client.get(url, params=params)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+        
+        data = response.json()
+        return ConsumptionResponse(**data)
