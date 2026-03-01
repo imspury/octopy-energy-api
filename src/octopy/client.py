@@ -1,9 +1,10 @@
 # Standard library imports
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
-# Third-party import
+# Third-party imports
 import httpx
+from pydantic import BaseModel
 
 # Custom imports
 from octopy.config import Settings
@@ -12,6 +13,9 @@ from octopy.models import (
     Account,
     ConsumptionResponse,
 )
+
+# TypeCar for paginated response types
+T = TypeVar("T", bound=BaseModel)
 
 class Octopy:
     """Async client for interacting with the Octopus Energy REST API.
@@ -117,6 +121,34 @@ class Octopy:
         else:
             time_str = "T23:59:59Z" if end_of_day else "T00:00:00Z"
             return f"{dt.isoformat()}{time_str}"
+        
+    async def _auto_paginate_response(self, response: T) -> T:
+        """Automatically fetch all pages of a paginated response.
+
+        Args:
+            response: The initial response object from a paginated endpoint.
+        
+        Returns:
+            A new response object with all results from all pages combined.
+        """
+        all_results = list(response.results)
+        next_url = getattr(response, "next", None)
+
+        while next_url:
+            next_response = await self._get_url(next_url)
+            page_data = next_response.json()
+            # Parse using the same model type as the original response
+            page = type(response)(**page_data)
+            all_results.extend(page.results)
+            next_url = getattr(page, "next", None)
+        
+        # Return a new response with all results
+        return type(response)(
+            count=response.count,
+            next=None,
+            previous=None,
+            results=all_results,
+        )
 
     async def get_account(self, account_number: str | None = None) -> Account:
         """Fetch account data including properties and meter points.
@@ -153,6 +185,7 @@ class Octopy:
         page_size: int = 100,
         order_by: str | None = None,
         group_by: str | None = None,
+        auto_paginate: bool = True,
     ) -> ConsumptionResponse:
         """Fetch consumption data for a specific meter point and serial number.
         
@@ -171,9 +204,12 @@ class Octopy:
                 Without this, latest records are returned first.
             group_by: Aggregate data by 'day', 'week', 'month', or 'quarter'.
                 Aggregation is based on local time, not UTC.
+            auto_paginate: If True (default), automatically fetch all pages.
+                If False, only return the first page.
         
         Returns:
             A ConsumptionResponse with consumption intervals.
+            When auto_paginate is True, all results are included and next/previous are None.
 
         Note:
             For gas: SMETS1 meters return consumption in kWh, while SMETS2 meters
@@ -205,4 +241,9 @@ class Octopy:
             self._handle_response_error(response)
         
         data = response.json()
-        return ConsumptionResponse(**data)
+        consumption_response = ConsumptionResponse(**data)
+
+        if auto_paginate and consumption_response.next:
+            return await self._auto_paginate_response(consumption_response)
+        
+        return consumption_response
