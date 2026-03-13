@@ -1,6 +1,7 @@
 # Standard library imports
 from datetime import date, datetime
 from typing import Any, Literal, TypeVar
+from urllib import response
 
 # Third-party imports
 import httpx
@@ -12,9 +13,11 @@ from octopy.exceptions import OctopusAPIError, OctopusAuthError
 from octopy.models import (
     Account,
     ConsumptionResponse,
+    ProductsResponse,
+    ProductDetail,
 )
 
-# TypeCar for paginated response types
+# TypeVar for paginated response types
 T = TypeVar("T", bound=BaseModel)
 
 class Octopy:
@@ -247,3 +250,74 @@ class Octopy:
             return await self._auto_paginate_response(consumption_response)
         
         return consumption_response
+
+    async def get_products(
+            self,
+            is_variable: bool | None = None,
+            is_green: bool | None = None,
+            is_tracker: bool | None = None,
+            is_prepay: bool | None = None,
+            is_business: bool | None = None,
+            available_at: date | None = None,
+    ) -> ProductsResponse:
+        """Fetch available energy products.
+
+        Args:
+            is_variable: Filter for variable rate products.
+            is_green: Filter for green/renewable products.
+            is_tracker: Filter for tracker products that follow wholesale prices.
+            is_prepay: Filter for prepayment products.
+            is_business: Filter for business products.
+            available_at: Filter for products available at a specific date.
+
+        Returns:
+            A ProductsResponse with a list of products.
+
+        Raises:
+            OctopusAPIError: If the API returns a non-2xx response.
+       """
+        url = "/products/"
+        params: dict[str, Any] = {}
+
+        if is_variable is not None:
+            params["is_variable"] = str(is_variable).lower()
+        if is_green is not None:
+            params["is_green"] = str(is_green).lower()
+        if is_tracker is not None:
+            params["is_tracker"] = str(is_tracker).lower()
+        if is_prepay is not None:
+            params["is_prepay"] = str(is_prepay).lower()
+        if is_business is not None:
+            params["is_business"] = str(is_business).lower()
+        if available_at:
+            params["available_at"] = self._format_datetime(available_at)
+        
+        response = await self.client.get(url, params=params)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+        
+        data = response.json()
+        return ProductsResponse(**data)
+
+    async def get_product(self, product_code: str) -> ProductDetail:
+        """Fetch detailed information for a specific product.
+
+        Args:
+            product_code: The product code (e.g. AGILE-FLEX-22-11-25).
+
+        Returns:
+            A ProductDetail object with tariff information.
+
+        Raises:
+            OctopusAPIError: If the API returns a non-2xx response.
+        """
+        url = f"/products/{product_code}/"
+
+        response = await self.client.get(url)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+
+        data = response.json()
+        return ProductDetail(**data)
