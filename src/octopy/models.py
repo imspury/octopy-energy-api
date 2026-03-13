@@ -172,3 +172,130 @@ class Account(BaseModel):
 
     number: str
     properties: list[Property]
+
+class Product(BaseModel):
+    """Model for an energy product.
+
+    Attributes:
+        code: Unique product code.
+        direction: IMPORT or EXPORT.
+        full_name: Full product name.
+        display_name: Display name for the product.
+        description: Product description.
+        is_variable: Whether pricing is variable.
+        is_green: Whether the product is 100% renewable.
+        is_tracker: Whether pricing tracks wholesale costs.
+        is_prepay: Whether this is a prepay product.
+        is_business: Whether this is a business product.
+        is_restricted: Whether availability is restricted.
+        term: Contract term in months, if any.
+        available_from: When the product became available.
+        available_to: When the product stops being available, if any.
+        brand: Brand name (OCTOPUS_ENERGY, COOP_ENERGY, LONDON_POWER).
+        links: Links to product detail and other resources.
+    """
+    code: str
+    direction: str
+    full_name: str
+    display_name: str
+    description: str
+    is_variable: bool
+    is_green: bool
+    is_tracker: bool
+    is_prepay: bool
+    is_business: bool
+    is_restricted: bool
+    term: int | None = None
+    available_from: datetime
+    available_to: datetime | None = None
+    brand: str
+    links: list[dict[str, str]]
+
+class ProductsResponse(BaseModel):
+    """Response model for products list endpoint.
+
+    Attributes:
+        count: Total number of products.
+        next: URL for next page of results, if any.
+        previous: URL for previous page of results, if any.
+        results: List of products.
+    """
+
+    count: int
+    next: str | None = None
+    previous: str | None = None
+    results: list[Product]
+
+class TariffDetail(BaseModel):
+    """Model for a tariff within a product.
+
+    Attributes:
+        code: Tariff code (e.g. E-1R-AGILE-FLEX-22-11-25-C).
+        standing_charge_exc_vat: Current standing charge excluding VAT, if available.
+        standing_charge_inc_vat: Current standing charge including VAT, if available.
+        online_discount_exc_vat: Online discount excluding VAT.
+        dual_fuel_discount_exc_vat: Dual fuel discount excluding VAT.
+        exit_fees_exc_vat: Exit fees excluding VAT.
+        exit_fees_inc_vat: Exit fees including VAT.
+        exit_fees_type: Type of exit fees.
+        links: Links to standing charges and unit rates endpoints.
+    """
+
+    code: str
+    standing_charge_exc_vat: float | None = None
+    standing_charge_inc_vat: float | None = None
+    online_discount_exc_vat: float
+    dual_fuel_discount_exc_vat: float
+    exit_fees_exc_vat: float
+    exit_fees_inc_vat: float
+    exit_fees_type: str
+    links: list[dict[str, str]]
+
+class ProductDetail(BaseModel):
+    """Model for detailed product information.
+
+    Attributes:
+        code: Unique product code.
+        direction: IMPORT or EXPORT.
+        full_name: Full product name.
+        display_name: Display name for the product.
+        description: Product description.
+        is_variable: Whether pricing is variable.
+        is_green: Whether the product is 100% renewable.
+        is_tracker: Whether pricing tracks wholesale costs.
+        is_prepay: Whether this is a prepay product.
+        is_business: Whether this is a business product.
+        is_restricted: Whether availability is restricted.
+        term: Contract term in months, if any.
+        available_from: When the product became available.
+        available_to: When the product stops being available, if any.
+        brand: Brand name.
+        links: Links to product resources.
+        single_register_electricity_tariffs: Tariffs for single register electricity meters.
+        dual_register_electricity_tariffs: Tariffs for dual register electricity meters.
+        single_register_gas_tariffs: Tariffs for single register gas meters.
+        sample_quotes: Sample pricing quotes for different regions.
+        sample_consumption: Sample consumption data used for quotes.
+    """
+
+    code: str
+    direction: str
+    full_name: str
+    display_name: str
+    description: str
+    is_variable: bool
+    is_green: bool
+    is_tracker: bool
+    is_prepay: bool
+    is_business: bool
+    is_restricted: bool
+    term: int | None = None
+    available_from: datetime
+    available_to: datetime | None = None
+    brand: str
+    links: list[dict[str, str]]
+    single_register_electricity_tariffs: dict[str, TariffDetail] = {}
+    dual_register_electricity_tariffs: dict[str, TariffDetail] = {}
+    single_register_gas_tariffs: dict[str, TariffDetail] = {}
+    sample_quotes: dict[str, dict] = {}
+    sample_consumption: dict = {}
