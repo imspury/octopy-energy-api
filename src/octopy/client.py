@@ -15,6 +15,7 @@ from octopy.models import (
     ConsumptionResponse,
     ProductsResponse,
     ProductDetail,
+    UnitRatesResponse,
 )
 
 # TypeVar for paginated response types
@@ -321,3 +322,50 @@ class Octopy:
 
         data = response.json()
         return ProductDetail(**data)
+
+    async def get_unit_rates(
+        self,
+        product_code: str,
+        tariff_code: str,
+        fuel: Literal["electricity", "gas"] = "electricity",
+        period_from: date | None = None,
+        period_to: date | None = None,
+        page_size: int = 100,
+    ) -> UnitRatesResponse:
+        """Fetch unit rates for a tariff.
+
+        Args:
+            product_code: The product code (e.g. AGILE-FLEX-22-11-25).
+            tariff_code: The tariff code.
+                For electricity: E-1R-AGILE-FLEX-22-11-25-C
+                For gas: G-1R-AGILE-FLEX-22-11-25-C
+            fuel: The fuel type, either 'electricity' or 'gas' (default: 'electricity').
+            period_from: Start date for rates (inclusive).
+            period_to: End date for rates (inclusive).
+            page_size: Number of results per page (default 100).
+
+        Returns:
+            A UnitRatesResponse with unit rates.
+
+        Raises:
+            OctopusAPIError: If the API returns a non-2xx response.
+       """
+        if fuel == "electricity":
+            url = f"/products/{product_code}/electricity-tariffs/{tariff_code}/standard-unit-rates/"
+        else:
+            url = f"/products/{product_code}/gas-tariffs/{tariff_code}/standard-unit-rates/"
+
+        params: dict[str, Any] = {"page_size": page_size}
+
+        if period_from:
+            params["period_from"] = period_from.isoformat() + "Z"
+        if period_to:
+            params["period_to"] = period_to.isoformat() + "Z"
+
+        response = await self.client.get(url, params=params)
+
+        if response.status_code != 200:
+            self._handle_response_error(response)
+
+        data = response.json()
+        return UnitRatesResponse(**data)
