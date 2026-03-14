@@ -226,6 +226,38 @@ class ProductsResponse(BaseModel):
     previous: str | None = None
     results: list[Product]
 
+class UnitRate(BaseModel):
+    """Model for a unit rate.
+
+    Attributes:
+        value_exc_vat: Price excluding VAT in pence per kWh.
+        value_inc_vat: Price including VAT in pence per kWh.
+        valid_from: When the rate becomes effective.
+        valid_to: When the rate expires, if any.
+        payment_method: Payment method filter (DIRECT_DEBIT, etc.), if any.
+    """
+
+    value_exc_vat: float
+    value_inc_vat: float
+    valid_from: datetime
+    valid_to: datetime | None = None
+    payment_method: str | None = None
+
+class UnitRatesResponse(BaseModel):
+    """Response model for unit rates endpoint.
+
+    Attributes:
+        count: Total number of rate records.
+        next: URL for next page of results, if any.
+        previous: URL for previous page of results, if any.
+        results: List of unit rates.
+    """
+
+    count: int
+    next: str | None = None
+    previous: str | None = None
+    results: list[UnitRate]
+
 class TariffDetail(BaseModel):
     """Model for a tariff within a product.
 
