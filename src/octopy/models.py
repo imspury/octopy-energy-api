@@ -23,7 +23,7 @@ class ConsumptionInterval(BaseModel):
 
 class ConsumptionResponse(BaseModel):
     """Response model for consumption endpoint.
-    
+
     Attributes:
         count: Total number of results.
         next: URL for next page of results, if any.
@@ -39,13 +39,13 @@ class ConsumptionResponse(BaseModel):
 
 class Register(BaseModel):
     """Model for a meter register.
-    
+
     Attributes:
         identifier: Register identifier.
         rate: Rate name (e.g. STANDARD, DAY, NIGHT).
         is_settlement_register: Whether this is the settlement register.
     """
-    
+
     identifier: str
     rate: str
     is_settlement_register: bool
@@ -53,7 +53,7 @@ class Register(BaseModel):
 
 class Meter(BaseModel):
     """Model for a physical meter.
-    
+
     Attributes:
         serial_number: The meter serial number.
         registers: List of registers on the meter (electricity only).
@@ -65,7 +65,7 @@ class Meter(BaseModel):
 
 class Agreement(BaseModel):
     """Model for a tariff agreement.
-    
+
     Attributes:
         tariff_code: The tariff code (e.g. E-1R-AGILE-FLEX-22-11-25-C).
         valid_from: Start date of the agreement.
@@ -80,7 +80,7 @@ class Agreement(BaseModel):
     @property
     def is_active(self) -> bool:
         """Check if the agreement is currently active.
-        
+
         An agreement is considered active if it has no end date (valid_to is None)
         or if the end date is in the future.
 
@@ -94,7 +94,7 @@ class Agreement(BaseModel):
 
 class ElectricityMeterPoint(BaseModel):
     """Model for an electricity meter point.
-    
+
     Attributes:
         mpan: Meter Point Administration Number.
         profile_class: Profile class (e.g. 1 for domestic).
@@ -118,7 +118,7 @@ class ElectricityMeterPoint(BaseModel):
 
 class GasMeterPoint(BaseModel):
     """Model for a gas meter point.
-    
+
     Attributes:
         mprn: Meter Point Reference Number.
         consumption_standard: Estimated annual consumption in kWh.
@@ -134,7 +134,7 @@ class GasMeterPoint(BaseModel):
 
 class Property(BaseModel):
     """Model for a property in the account.
-    
+
     Attributes:
         id: Property ID.
         moved_in_at: Date when the customer moved in.
@@ -148,7 +148,7 @@ class Property(BaseModel):
         electricity_meter_points: List of electricity meter points.
         gas_meter_points: List of gas meter points.
     """
-    
+
     id: int
     moved_in_at: datetime | None = None
     moved_out_at: datetime | None = None
@@ -164,7 +164,7 @@ class Property(BaseModel):
 
 class Account(BaseModel):
     """Model for an Octopus Energy account.
-    
+
     Attributes:
         number: Account number in A-XXXXXXXX format.
         properties: List of properties associated with the account.
@@ -172,6 +172,7 @@ class Account(BaseModel):
 
     number: str
     properties: list[Property]
+
 
 class Product(BaseModel):
     """Model for an energy product.
@@ -194,6 +195,7 @@ class Product(BaseModel):
         brand: Brand name (OCTOPUS_ENERGY, COOP_ENERGY, LONDON_POWER).
         links: Links to product detail and other resources.
     """
+
     code: str
     direction: str
     full_name: str
@@ -211,6 +213,7 @@ class Product(BaseModel):
     brand: str
     links: list[dict[str, str]]
 
+
 class ProductsResponse(BaseModel):
     """Response model for products list endpoint.
 
@@ -225,6 +228,7 @@ class ProductsResponse(BaseModel):
     next: str | None = None
     previous: str | None = None
     results: list[Product]
+
 
 class UnitRate(BaseModel):
     """Model for a unit rate.
@@ -243,6 +247,7 @@ class UnitRate(BaseModel):
     valid_to: datetime | None = None
     payment_method: str | None = None
 
+
 class UnitRatesResponse(BaseModel):
     """Response model for unit rates endpoint.
 
@@ -257,6 +262,41 @@ class UnitRatesResponse(BaseModel):
     next: str | None = None
     previous: str | None = None
     results: list[UnitRate]
+
+
+class StandingCharge(BaseModel):
+    """Model for a standing charge.
+
+    Attributes:
+        value_exc_vat: Daily charge excluding VAT in pence.
+        value_inc_vat: Daily charge including VAT in pence.
+        valid_from: When the charge becomes effective.
+        valid_to: When the charge expires, if any.
+        payment_method: Payment method filter, if any.
+    """
+
+    value_exc_vat: float
+    value_inc_vat: float
+    valid_from: datetime
+    valid_to: datetime | None = None
+    payment_method: str | None = None
+
+
+class StandingChargesResponse(BaseModel):
+    """Response model for standing charges endpoint.
+
+    Attributes:
+        count: Total number of charge records.
+        next: URL for next page of results, if any.
+        previous: URL for previous page of results, if any.
+        results: List of standing charges.
+    """
+
+    count: int
+    next: str | None = None
+    previous: str | None = None
+    results: list[StandingCharge]
+
 
 class TariffDetail(BaseModel):
     """Model for a tariff within a product.
@@ -282,6 +322,7 @@ class TariffDetail(BaseModel):
     exit_fees_inc_vat: float
     exit_fees_type: str
     links: list[dict[str, str]]
+
 
 class ProductDetail(BaseModel):
     """Model for detailed product information.
