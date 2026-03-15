@@ -60,6 +60,9 @@ path = "src/octopy/__about__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/octopy"]
+include = [
+  "/src/octopy/py.typed",
+]
 
 [tool.hatch.envs.types]
 extra-dependencies = [
