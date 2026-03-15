@@ -277,7 +277,7 @@ class StandingCharge(BaseModel):
 
     value_exc_vat: float
     value_inc_vat: float
-    valid_from: datetime
+    valid_from: datetime | None = None
     valid_to: datetime | None = None
     payment_method: str | None = None
 
@@ -324,12 +324,23 @@ class TariffDetail(BaseModel):
     links: list[dict[str, str]]
 
 
+class PaymentOptions(BaseModel):
+    """Model for payment options available for a tariff.
+    
+    Attributes:
+        direct_debit_monthly: Tariff details for monthly direct debit payment method, if available.
+        prepayment: Tariff details for prepayment method, if available.
+    """
+
+    direct_debit_monthly: TariffDetail | None = None
+    prepayment: TariffDetail | None = None
+
+
 class ProductDetail(BaseModel):
     """Model for detailed product information.
 
     Attributes:
         code: Unique product code.
-        direction: IMPORT or EXPORT.
         full_name: Full product name.
         display_name: Display name for the product.
         description: Product description.
@@ -352,7 +363,6 @@ class ProductDetail(BaseModel):
     """
 
     code: str
-    direction: str
     full_name: str
     display_name: str
     description: str
@@ -367,8 +377,8 @@ class ProductDetail(BaseModel):
     available_to: datetime | None = None
     brand: str
     links: list[dict[str, str]]
-    single_register_electricity_tariffs: dict[str, TariffDetail] = {}
-    dual_register_electricity_tariffs: dict[str, TariffDetail] = {}
-    single_register_gas_tariffs: dict[str, TariffDetail] = {}
+    single_register_electricity_tariffs: dict[str, PaymentOptions] = {}
+    dual_register_electricity_tariffs: dict[str, PaymentOptions] = {}
+    single_register_gas_tariffs: dict[str, PaymentOptions] = {}
     sample_quotes: dict[str, dict] = {}
     sample_consumption: dict = {}
