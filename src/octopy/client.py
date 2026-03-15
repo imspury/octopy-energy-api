@@ -256,7 +256,7 @@ class Octopy:
         is_tracker: bool | None = None,
         is_prepay: bool | None = None,
         is_business: bool | None = None,
-        available_at: date | None = None,
+        available_at: date | datetime | None = None,
     ) -> ProductsResponse:
         """Fetch available energy products.
 
@@ -325,9 +325,10 @@ class Octopy:
         product_code: str,
         tariff_code: str,
         fuel: Literal["electricity", "gas"] = "electricity",
-        period_from: date | None = None,
-        period_to: date | None = None,
+        period_from: date | datetime | None = None,
+        period_to: date | datetime | None = None,
         page_size: int = 100,
+        auto_paginate: bool = True,
     ) -> UnitRatesResponse:
         """Fetch unit rates for a tariff.
 
@@ -340,9 +341,12 @@ class Octopy:
             period_from: Start date for rates (inclusive).
             period_to: End date for rates (inclusive).
             page_size: Number of results per page (default 100).
+            auto_paginate: If True (default), automatically fetch all pages.
+                If False, only return the first page.
 
         Returns:
             A UnitRatesResponse with unit rates.
+            When auto_paginate is True, all results are included and next/previous are None.
 
         Raises:
             OctopusAPIError: If the API returns a non-2xx response.
@@ -355,9 +359,9 @@ class Octopy:
         params: dict[str, Any] = {"page_size": page_size}
 
         if period_from:
-            params["period_from"] = period_from.isoformat() + "Z"
+            params["period_from"] = self._format_datetime(period_from)
         if period_to:
-            params["period_to"] = period_to.isoformat() + "Z"
+            params["period_to"] = self._format_datetime(period_to, end_of_day=True)
 
         response = await self.client.get(url, params=params)
 
@@ -365,15 +369,21 @@ class Octopy:
             self._handle_response_error(response)
 
         data = response.json()
-        return UnitRatesResponse(**data)
+        unit_rate_response = UnitRatesResponse(**data)
+
+        if auto_paginate and unit_rate_response.next:
+            return await self._auto_paginate_response(unit_rate_response)
+
+        return unit_rate_response
 
     async def get_standing_charges(
         self,
         product_code: str,
         tariff_code: str,
         fuel: Literal["electricity", "gas"] = "electricity",
-        period_from: date | None = None,
-        period_to: date | None = None,
+        period_from: date | datetime | None = None,
+        period_to: date | datetime | None = None,
+        auto_paginate: bool = True,
     ) -> StandingChargesResponse:
         """Fetch standing charges for a tariff.
 
@@ -385,9 +395,12 @@ class Octopy:
             fuel: The fuel type, either 'electricity' or 'gas' (default: 'electricity').
             period_from: Start date for charges (inclusive).
             period_to: End date for charges (inclusive).
+            auto_paginate: If True (default), automatically fetch all pages.
+                If False, only return the first page.
 
         Returns:
             A StandingChargesResponse with daily standing charges.
+            When auto_paginate is True, all results are included and next/previous are None.
 
         Raises:
             OctopusAPIError: If the API returns a non-2xx response.
@@ -402,9 +415,9 @@ class Octopy:
         params: dict[str, Any] = {}
 
         if period_from:
-            params["period_from"] = period_from.isoformat() + "Z"
+            params["period_from"] = self._format_datetime(period_from)
         if period_to:
-            params["period_to"] = period_to.isoformat() + "Z"
+            params["period_to"] = self._format_datetime(period_to, end_of_day=True)
 
         response = await self.client.get(url, params=params)
 
@@ -412,4 +425,9 @@ class Octopy:
             self._handle_response_error(response)
 
         data = response.json()
-        return StandingChargesResponse(**data)
+        standing_charge_response = StandingChargesResponse(**data)
+
+        if auto_paginate and standing_charge_response.next:
+            return await self._auto_paginate_response(standing_charge_response)
+        
+        return standing_charge_response
