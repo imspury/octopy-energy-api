@@ -11,6 +11,7 @@ from octopy.config import Settings
 from octopy.exceptions import OctopusAPIError, OctopusAuthError
 from octopy.models import (
     Account,
+    Region,
     ConsumptionResponse,
     ProductsResponse,
     ProductDetail,
@@ -46,7 +47,7 @@ class Octopy:
             timeout=30.0,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Octopy":
         """Async context manager entry.
 
         Returns:
@@ -85,7 +86,7 @@ class Octopy:
         """
         response = await self.client.get(url)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         return response
@@ -118,7 +119,9 @@ class Octopy:
             ISO 8601 formatted string with UTC timezone indicator.
         """
         if isinstance(dt, datetime):
-            return dt.isoformat() + "Z" if dt.tzinfo is None else dt.isoformat()
+            if dt.tzinfo is None:
+                return dt.isoformat() + "Z"
+            return dt.isoformat()
         else:
             time_str = "T23:59:59Z" if end_of_day else "T00:00:00Z"
             return f"{dt.isoformat()}{time_str}"
@@ -170,11 +173,41 @@ class Octopy:
 
         response = await self.client.get(url)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
         return Account(**data)
+
+    async def get_grid_supply_point(self, postcode: str) -> Region:
+        """Fetch the Grid Supply Point (GSP) code from postcode.
+
+        Args:
+            postcode: The postcode to look up.
+        
+        Returns:
+            A Region enum representing the GSP region identifier.
+
+        Raises:
+            OctopusAPIError: If the API request fails.
+            ValueError: If the postcode is invalid or GSP cannot be found.
+        """
+        url = "/industry/grid-supply-points/"
+        params: dict[str, Any] = {"postcode": postcode}
+
+        response = await self.client.get(url, params=params)
+
+        if not (200 <= response.status_code < 300):
+            self._handle_response_error(response)
+        
+        data = response.json()
+        results = data.get("results", [])
+
+        if results:
+            group_id = results[0]["group_id"]
+            return Region(group_id)
+        else:
+            raise ValueError(f"No GSP data found for postcode: {postcode}")
 
     async def get_consumption(
         self,
@@ -238,7 +271,7 @@ class Octopy:
 
         response = await self.client.get(url, params=params)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
@@ -278,21 +311,21 @@ class Octopy:
         params: dict[str, Any] = {}
 
         if is_variable is not None:
-            params["is_variable"] = str(is_variable).lower()
+            params["is_variable"] = is_variable
         if is_green is not None:
-            params["is_green"] = str(is_green).lower()
+            params["is_green"] = is_green
         if is_tracker is not None:
-            params["is_tracker"] = str(is_tracker).lower()
+            params["is_tracker"] = is_tracker
         if is_prepay is not None:
-            params["is_prepay"] = str(is_prepay).lower()
+            params["is_prepay"] = is_prepay
         if is_business is not None:
-            params["is_business"] = str(is_business).lower()
+            params["is_business"] = is_business
         if available_at:
             params["available_at"] = self._format_datetime(available_at)
 
         response = await self.client.get(url, params=params)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
@@ -314,7 +347,7 @@ class Octopy:
 
         response = await self.client.get(url)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
@@ -365,7 +398,7 @@ class Octopy:
 
         response = await self.client.get(url, params=params)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
@@ -421,7 +454,7 @@ class Octopy:
 
         response = await self.client.get(url, params=params)
 
-        if response.status_code != 200:
+        if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
 
         data = response.json()
