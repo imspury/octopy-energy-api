@@ -2,6 +2,10 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
+__all__ = ["Settings", "get_settings"]
+
+
 class Settings(BaseSettings):
     """Application settings for Octopy, loaded from environment variables.
     
