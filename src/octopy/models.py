@@ -1,10 +1,30 @@
 """Pydantic models for Octopus Energy API requests and responses."""
 
-# Standard library import
+# Standard library imports
 from datetime import datetime
+from enum import Enum
 
 # Third-party import
 from pydantic import BaseModel
+
+
+class Region(str, Enum):
+    """Mapping of UK Electricity Grid Supply Point (GSP) Group IDs to geographic regions."""
+
+    Eastern = "_A"
+    EastMidlands = "_B"
+    London = "_C"
+    Merseyside = "_D"
+    Midlands = "_E"
+    NorthEastern = "_F"
+    NorthWestern = "_G"
+    Southern = "_H"
+    SouthEastern = "_J"
+    SouthWales = "_K"
+    SouthWestern = "_L"
+    Yorkshire = "_M"
+    SouthScotland = "_N"
+    NorthScotland = "_P"
 
 
 class ConsumptionInterval(BaseModel):
