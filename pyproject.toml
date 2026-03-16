@@ -20,7 +20,7 @@ keywords = [
   "gas",
 ]
 authors = [
-  { name = "Sam P (Spury)", email = "s.pur@outlook.com" },
+  { name = "Sam P (Spury)" },
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
