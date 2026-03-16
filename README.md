@@ -67,8 +67,8 @@ async def main():
         meter = meter_point.meters[0]
 
         consumption = await client.get_consumption(
-            meter_point=meter_point.mpan
-            serial_number=meter.serial_number
+            meter_point=meter_point.mpan,
+            serial_number=meter.serial_number,
             fuel="electricity"
         )
 
