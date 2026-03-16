@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     octopus_api_key: str
     octopus_account_number: str
-    octopus_api_base_url: str = "https://api.octopus.energy/v1/"
+    octopus_api_base_url: str = "https://api.octopus.energy/v1"
 
 
 def get_settings() -> Settings:
