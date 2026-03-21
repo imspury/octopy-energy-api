@@ -104,11 +104,11 @@ All paginated endpoints support automatic pagination with `auto_paginate=True` (
 
 ## Usage Examples
 
-See the [examples/](examples/) directory for complete working examples:
+See the [examples/](https://github.com/imspury/octopy-energy-api/tree/main/examples) directory for complete working examples:
 
-- **[fetch_account_info.py](examples/fetch_account_info.py)** - Display account, properties, and meters
-- **[fetch_consumption.py](examples/fetch_consumption.py)** - Fetch consumption data with statistics
-- **[compare_tariffs.py](examples/compare_tariffs.py)** - Compare unit rates and standing charges across products
+- **[fetch_account_info.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/fetch_account_info.py)** - Display account, properties, and meters
+- **[fetch_consumption.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/fetch_consumption.py)** - Fetch consumption data with statistics
+- **[compare_tariffs.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/compare_tariffs.py)** - Compare unit rates and standing charges across products
 
 ## Data Models
 
