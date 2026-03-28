@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-23
+
+### Added
+- Comprehensive unit test suite with pytest
+- Test coverage for all client methods and endpoints
+- Tests for account management endpoints (get_account, get_grid_supply_point)
+- Tests for consumption data endpoint with pagination and filtering
+- Tests for pricing endpoints (get_unit_rates, get_standing_charges)
+- Tests for product endpoints (get_products, get_product)
+- Tests for exception classes (OctopusAPIError, OctopusAuthError)
+- Tests for configuration management and environment variable handling
+- Tests for Pydantic models and data validation
+- Tests for datetime formatting and pagination logic
+- Test fixtures for mock data and client setup
+- HTTP mocking with respx for isolated testing
+- pytest-asyncio for async test support
+- pytest-cov for coverage reporting
+
+### Changed
+- Updated development dependencies in pyproject.toml
+- Improved test configuration with strict markers and coverage reporting
+
 ## [0.1.0] - 2026-03-16
 
 ### Added
@@ -42,4 +64,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Removed trailing slash from default API base URL to prevent double-slash issues
 
+[0.2.0]: https://github.com/imspury/octopy-energy-api/releases/tag/v0.2.0
 [0.1.0]: https://github.com/imspury/octopy-energy-api/releases/tag/v0.1.0
