@@ -42,10 +42,14 @@ async def main() -> None:
                 if product_detail.single_register_electricity_tariffs:
                     # Take first tariff
                     first_region_data = next(iter(product_detail.single_register_electricity_tariffs.values()))
-                    if first_region_data.prepayment:
-                        tariff_code = first_region_data.prepayment.code
-                    else:
-                        tariff_code = first_region_data.direct_debit_monthly.code
+                    tariff = first_region_data.prepayment or first_region_data.direct_debit_monthly
+
+                    if not tariff:
+                        print(f"No tariff available for {product.display_name}")
+                        print()
+                        continue
+
+                    tariff_code = tariff.code
 
                     # Fetch unit rates for yesterday
                     rates_response = await client.get_unit_rates(
