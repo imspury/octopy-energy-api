@@ -125,6 +125,72 @@ All API responses are returned as fully typed Pydantic models:
 - `StandingCharge` - Daily standing charge
 - `Region` - Grid Supply Point (GSP) region enum
 
+## Development
+
+### Setup
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/imspury/octopy-energy-api.git
+cd octopy-energy-api
+pip install -e ".[dev]"
+```
+
+### Testing
+
+This project uses `pytest` for testing with comprehensive test coverage.
+
+#### Run Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src/octopy --cov-report=term-missing
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_client.py
+
+# Run specific test
+pytest tests/test_client.py::test_get_account
+```
+
+#### Test Structure
+
+The test suite includes:
+
+- **Unit tests** for all client methods and API endpoints
+- **HTTP mocking** with `respx` for isolated testing (no real API calls)
+- **Async test support** with `pytest-asyncio`
+- **Comprehensive coverage** of:
+ - Account management endpoints
+ - Consumption data with pagination and filtering
+ - Product and pricing endpoints
+ - Exception handling and error cases
+ - Configuration management
+ - Data model validation
+
+#### Code Quality
+
+```bash
+# Run linting
+ruff check src/ tests/ examples/
+
+# Auto-fix linting issues
+ruff check --fix src/ tests/ examples/
+
+# Format code
+ruff format src/ tests/ examples/
+
+# Type checking
+mypy src/octopy tests
+```
+
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
