@@ -101,7 +101,7 @@ class TestGetProducts:
                 is_variable=True,
                 is_tracker=False,
                 is_prepay=True,
-                is_business=False
+                is_business=False,
             )
 
             assert isinstance(products, ProductsResponse)
