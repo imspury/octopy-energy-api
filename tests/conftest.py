@@ -1,10 +1,11 @@
 """Shared pytest fixtures for testing Octopy."""
 
 # Standard library imports
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any, AsyncGenerator
+from typing import Any
 
-# Third-party imports
+# Third-party import
 import pytest
 
 # Custom imports
@@ -19,7 +20,6 @@ from octopy.models import (
     Meter,
     Product,
     Property,
-    Region,
 )
 
 
@@ -31,7 +31,7 @@ def mock_settings() -> Settings:
         A Settings instance with test API credentials.
     """
     return Settings(
-        octopus_api_key="test_api_key",
+        octopus_api_key="sk_live_testapikey123",
         octopus_account_number="A-12345678",
         octopus_api_base_url="https://api.octopus.energy/v1",
     )
@@ -204,7 +204,6 @@ def mock_product() -> Product:
         brand="OCTOPUS_ENERGY",
         links=[],
     )
-
 
 
 @pytest.fixture
