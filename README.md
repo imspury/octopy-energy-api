@@ -117,7 +117,7 @@ All paginated endpoints support automatic pagination with `auto_paginate=True` (
 ## Known Limitations
 
 ### API Constraints
-- **Rate Limiting**: The Octopus Energy API may have rate limits. The client includes automatic retry logic for transient errors (429, 500, 502, 503, 504) with exponential backoff
+- **Rate Limiting**: The Octopus Energy API may have rate limits. The client includes automatic retry logic for transient errors (408, 429, 500, 502, 503, 504) and network-level failures (timeouts, connection errors) with exponential backoff
 - **Page Size**: Maximum page size is 25,000 results per request
 - **Date Ranges**: Historical data availability varies by meter type and installation date
 
