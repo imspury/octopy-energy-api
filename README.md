@@ -14,6 +14,7 @@ An async Python client library for the [Octopus Energy REST API](https://develop
 - **Secure** - Built-in API key authentication
 - **Type-Safe** - Complete type hints for better IDE support
 - **Automatic Pagination** - Seamlessly fetch all pages of data
+- **Automatic Retry** - Exponential backoff on transient errors for all API requests
 
 ## Installation
 
