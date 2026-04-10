@@ -1,7 +1,6 @@
 """Tests for Octopy client pricing endpoints."""
 
 from datetime import date
-from typing import Any
 
 import httpx
 import pytest
