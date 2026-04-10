@@ -23,7 +23,6 @@ from octopy.models import (
     UnitRatesResponse,
 )
 
-
 __all__ = [
     "Octopy",
     "OctopusAPIError",
