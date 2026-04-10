@@ -18,7 +18,10 @@ class TestOctopyInitialisation:
 
         assert client.settings == mock_settings
         assert isinstance(client.client, httpx.AsyncClient)
-        assert str(client.client.base_url).rstrip("/") == mock_settings.octopus_api_base_url
+        assert (
+            str(client.client.base_url).rstrip("/")
+            == mock_settings.octopus_api_base_url
+        )
 
     def test_client_auth_configuration(self, mock_settings: Settings) -> None:
         """Test client is configured with HTTP Basic Auth."""
@@ -121,6 +124,104 @@ class TestErrorHandling:
             assert exc_info.value.status_code == 500
 
 
+class TestRetryLogic:
+    """Tests for retry logic and error handling."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.respx(base_url="https://api.octopus.energy/v1")
+    async def test_retry_on_500_error(
+        self, mock_settings: Settings, respx_mock: pytest.MonkeyPatch
+    ) -> None:
+        """Test retry logic on 500 server error."""
+
+        # Mock consecutive failures then success
+        route = respx_mock.get("/test")
+        route.side_effect = [
+            httpx.Response(500, text="Server Error"),
+            httpx.Response(200, json={"test": "data"}),
+        ]
+
+        async with Octopy(mock_settings) as client:
+            # Mock the _sleep method to avoid actual delays
+            client._sleep = lambda x: __import__("asyncio").sleep(0)
+            response = await client._get_url("/test")
+            assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    @pytest.mark.respx(base_url="https://api.octopus.energy/v1")
+    async def test_retry_exhaustion(
+        self, mock_settings: Settings, respx_mock: pytest.MonkeyPatch
+    ) -> None:
+        """Test retry logic exhausts and raises error."""
+        from octopy.exceptions import OctopusAPIError
+
+        # Mock all attempts to fail
+        respx_mock.get("/test").mock(
+            return_value=httpx.Response(500, text="Server Error")
+        )
+
+        async with Octopy(mock_settings) as client:
+            # Mock the _sleep method to avoid actual delays
+            client._sleep = lambda x: __import__("asyncio").sleep(0)
+            with pytest.raises(OctopusAPIError) as exc_info:
+                await client._get_url("/test", retries=2)
+
+            assert exc_info.value.status_code == 500
+
+    @pytest.mark.asyncio
+    @pytest.mark.respx(base_url="https://api.octopus.energy/v1")
+    async def test_retry_on_timeout(
+        self, mock_settings: Settings, respx_mock: pytest.MonkeyPatch
+    ) -> None:
+        """Test retry logic on timeout error."""
+
+        # Mock timeout then success
+        route = respx_mock.get("/test")
+        route.side_effect = [
+            httpx.TimeoutException("Request timeout"),
+            httpx.Response(200, json={"test": "data"}),
+        ]
+
+        async with Octopy(mock_settings) as client:
+            # Mock the _sleep method to avoid actual delays
+            client._sleep = lambda x: __import__("asyncio").sleep(0)
+            response = await client._get_url("/test")
+            assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    @pytest.mark.respx(base_url="https://api.octopus.energy/v1")
+    async def test_retry_on_network_error(
+        self, mock_settings: Settings, respx_mock: pytest.MonkeyPatch
+    ) -> None:
+        """Test retry logic on network error."""
+        from octopy.exceptions import OctopusAPIError
+
+        # Mock network error
+        respx_mock.get("/test").mock(
+            side_effect=httpx.NetworkError("Connection failed")
+        )
+
+        async with Octopy(mock_settings) as client:
+            # Mock the _sleep method to avoid actual delays
+            client._sleep = lambda x: __import__("asyncio").sleep(0)
+            with pytest.raises(OctopusAPIError) as exc_info:
+                await client._get_url("/test", retries=1)
+
+            assert "Network error" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_sleep_method(self, mock_settings: Settings) -> None:
+        """Test the _sleep method."""
+        import time
+
+        client = Octopy(mock_settings)
+        start = time.time()
+        await client._sleep(0.1)
+        elapsed = time.time() - start
+
+        assert elapsed >= 0.1
+
+
 class TestDateTimeFormatting:
     """Tests for datetime formatting helper."""
 
@@ -128,6 +229,20 @@ class TestDateTimeFormatting:
         self, mock_settings: Settings
     ) -> None:
         """Test _format_datetime with timezone-aware datetime."""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        client = Octopy(mock_settings)
+        dt = datetime(2024, 3, 19, 10, 30, 0, tzinfo=ZoneInfo("Europe/London"))
+
+        formatted = client._format_datetime(dt)
+
+        # Should preserve timezone info
+        assert "2024-03-19" in formatted
+        assert "10:30:00" in formatted
+
+    def test_format_datetime_from_datetime_no_tz(self, mock_settings: Settings) -> None:
+        """Test _format_datetime with naive datetime."""
         from datetime import datetime
 
         client = Octopy(mock_settings)
