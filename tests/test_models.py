@@ -1,11 +1,10 @@
 """Tests for Pydantic models."""
 
 # Standard library import
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-# Third-party imports
+# Third-party import
 import pytest
-from pydantic import ValidationError
 
 # Custom import
 from octopy.models import (
@@ -17,16 +16,11 @@ from octopy.models import (
     GasMeterPoint,
     Meter,
     Product,
-    ProductDetail,
-    ProductsResponse,
     Property,
     Region,
     Register,
     StandingCharge,
-    StandingChargesResponse,
-    TariffDetail,
     UnitRate,
-    UnitRatesResponse,
 )
 
 
@@ -100,7 +94,7 @@ class TestAgreement:
         """Test Agreement is active when valid_to is None."""
         agreement = Agreement(
             tariff_code="E-1R-AGILE-FLEX-22-11-25-C",
-            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=timezone.utc),
+            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=UTC),
             valid_to=None,
         )
 
@@ -110,8 +104,8 @@ class TestAgreement:
         """Test Agreement is active when valid_to is in the future."""
         agreement = Agreement(
             tariff_code="E-1R-AGILE-FLEX-22-11-25-C",
-            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=timezone.utc),
-            valid_to=datetime(2099, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=UTC),
+            valid_to=datetime(2099, 12, 31, 23, 59, 59, tzinfo=UTC),
         )
 
         assert agreement.is_active is True
@@ -120,8 +114,8 @@ class TestAgreement:
         """Test Agreement is inactive when valid_to is in the past."""
         agreement = Agreement(
             tariff_code="E-1R-AGILE-FLEX-22-11-25-C",
-            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=timezone.utc),
-            valid_to=datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            valid_from=datetime(2022, 11, 25, 0, 0, 0, tzinfo=UTC),
+            valid_to=datetime(2023, 1, 1, 0, 0, 0, tzinfo=UTC),
         )
 
         assert agreement.is_active is False
