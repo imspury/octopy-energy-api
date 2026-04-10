@@ -23,6 +23,16 @@ from octopy.models import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Patch _sleep to a no-op so retry tests do not incur real delays."""
+
+    async def _instant_sleep(self: Octopy, seconds: float) -> None:
+        pass
+
+    monkeypatch.setattr(Octopy, "_sleep", _instant_sleep)
+
+
 @pytest.fixture
 def mock_settings() -> Settings:
     """Create mock settings for testing.
