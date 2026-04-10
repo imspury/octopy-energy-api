@@ -97,7 +97,11 @@ class TestGetProducts:
 
         async with Octopy(mock_settings) as client:
             products = await client.get_products(
-                is_green=True, is_variable=True, is_tracker=False, is_business=False
+                is_green=True,
+                is_variable=True,
+                is_tracker=False,
+                is_prepay=True,
+                is_business=False
             )
 
             assert isinstance(products, ProductsResponse)
@@ -108,6 +112,7 @@ class TestGetProducts:
         assert "is_green=true" in url_str
         assert "is_variable=true" in url_str
         assert "is_tracker=false" in url_str
+        assert "is_prepay=true" in url_str
         assert "is_business=false" in url_str
 
     @pytest.mark.asyncio
