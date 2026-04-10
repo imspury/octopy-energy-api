@@ -1,5 +1,10 @@
 # Octopy Energy API
 
+[![PyPI version](https://badge.fury.io/py/octopy-energy-api.svg)](https://badge.fury.io/py/octopy-energy-api)
+[![Python versions](https://img.shields.io/pypi/pyversions/octopy-energy-api.svg)](https://pypi.org/project/octopy-energy-api/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+
 An async Python client library for the [Octopus Energy REST API](https://developer.octopus.energy/rest/)
 
 ## Features
@@ -22,7 +27,13 @@ pip install octopy-energy-api
 
 ## Configuration
 
-Create a `.env` file in your project root:
+Copy the example environment file and add your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your Octopus Energy credentials:
 
 ```env
 OCTOPUS_API_KEY=sk_live_xxxxxxxxxxxxxxxxxxxxx
@@ -102,6 +113,42 @@ if __name__ == "__main__":
 
 All paginated endpoints support automatic pagination with `auto_paginate=True` (default).
 
+## Known Limitations
+
+### API Constraints
+- **Rate Limiting**: The Octopus Energy API may have rate limits. The client includes automatic retry logic for transient errors (429, 500, 502, 503, 504) with exponential backoff
+- **Page Size**: Maximum page size is 25,000 results per request
+- **Date Ranges**: Historical data availability varies by meter type and installation date
+
+### Gas Meter Differences
+- **SMETS1 meters**: Return consumption in kWh (kilowatt-hours)
+- **SMETS2 meters**: Return consumption in cubic meters (m³)
+
+### Authentication
+- API keys must be in format `sk_live_*` or `sk_test_*`
+- Account numbers must be in format `A-XXXXXXXX`
+- Some endpoints (products, pricing) work without authentication, while account and consumption endpoints require valid credentials
+
+### Debugging
+Enable debug logging to see detailed API request/response information:
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## Performance Tips
+
+### Response Caching
+
+Since energy pricing data doesn't change frequently, caching API responses can significantly reduce API calls and improve performance. See [examples/cached_pricing.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/cached_pricing.py) for a complete implementation using `cachetools`.
+
+Recommended caching durations:
+- **Pricing data** (unit rates, standing charges): 1-24 hours
+- **Product lists**: Several hours
+- **Consumption data**: Don't cache or use very short TTL (real-time data)
+- **Account information**: Hours to days
+
 ## Usage Examples
 
 See the [examples/](https://github.com/imspury/octopy-energy-api/tree/main/examples) directory for complete working examples:
@@ -109,6 +156,7 @@ See the [examples/](https://github.com/imspury/octopy-energy-api/tree/main/examp
 - **[fetch_account_info.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/fetch_account_info.py)** - Display account, properties, and meters
 - **[fetch_consumption.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/fetch_consumption.py)** - Fetch consumption data with statistics
 - **[compare_tariffs.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/compare_tariffs.py)** - Compare unit rates and standing charges across products
+- **[cached_pricing.py](https://github.com/imspury/octopy-energy-api/tree/main/examples/cached_pricing.py)** - Cache API responses to reduce API calls
 
 ## Data Models
 
