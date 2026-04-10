@@ -229,17 +229,15 @@ class TestDateTimeFormatting:
         self, mock_settings: Settings
     ) -> None:
         """Test _format_datetime with timezone-aware datetime."""
-        from datetime import datetime
-        from zoneinfo import ZoneInfo
+        from datetime import datetime, timezone
 
         client = Octopy(mock_settings)
-        dt = datetime(2024, 3, 19, 10, 30, 0, tzinfo=ZoneInfo("Europe/London"))
+        dt = datetime(2024, 3, 19, 10, 30, 0, tzinfo=timezone.utc)
 
         formatted = client._format_datetime(dt)
 
         # Should preserve timezone info
-        assert "2024-03-19" in formatted
-        assert "10:30:00" in formatted
+        assert formatted == "2024-03-19T10:30:00+00:00"
 
     def test_format_datetime_from_datetime_no_tz(self, mock_settings: Settings) -> None:
         """Test _format_datetime with naive datetime."""
