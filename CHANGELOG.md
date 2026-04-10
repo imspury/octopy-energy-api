@@ -8,24 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-04-10
 
 ### Added
-- Automatic retry logic for transient network errors (500, 502, 503, 504, timeouts)
-- Exponential backoff for retries with configurable attempts
+- Automatic retry logic with exponential backoff for transient network errors (408, 429, 500, 502, 503, 504) on all API requests
 - Debug logging support for API requests and responses
 - Input validation for API keys (must start with sk_live_ or sk_test_)
 - Input validation for account numbers (must match A-XXXXXXXX format)
 - Constants module for centralised configuration values
+- `page_size` parameter for `get_standing_charges`, consistent with `get_unit_rates` and `get_consumption`
 - Caching example demonstrating response caching with TTL
 - Performance tips section in README
 - Known Limitations section in README documenting API constraints
 - Package badges in README (PyPI version, Python versions, license, code style)
 
 ### Changed
-- Improved test coverage from 98% to 99%
 - Updated README with clearer configuration instructions
 - Extracted magic numbers to named constants for better maintainability
 
 ### Fixed
-- Validation tests updated to use proper API key formats
+- Retry and backoff logic now correctly applies to all initial API requests; previously, it only applied to pagination follow-up requests, leaving first-page calls unprotected
+- Resolved pre-release code quality issues: ruff formatting, mypy type annotation errors, and modernised `timezone.utc` to `datetime.UTC`
 
 ## [0.2.0] - 2026-03-23
 
@@ -86,5 +86,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Removed trailing slash from default API base URL to prevent double-slash issues
 
+[0.3.0]: https://github.com/imspury/octopy-energy-api/releases/tag/v0.3.0
 [0.2.0]: https://github.com/imspury/octopy-energy-api/releases/tag/v0.2.0
 [0.1.0]: https://github.com/imspury/octopy-energy-api/releases/tag/v0.1.0
