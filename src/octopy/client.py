@@ -1,11 +1,11 @@
 # Standard library imports
+import asyncio
 import logging
 from datetime import date, datetime
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, Protocol, TypeVar
 
-# Third-party imports
+# Third-party import
 import httpx
-from pydantic import BaseModel
 
 # Custom imports
 from octopy.config import Settings
@@ -29,8 +29,18 @@ from octopy.models import (
 
 logger = logging.getLogger(__name__)
 
+
+class _PaginatedResponse(Protocol):
+    """Protocol for paginated API response models."""
+
+    count: int
+    next: str | None
+    previous: str | None
+    results: list[Any]
+
+
 # TypeVar for paginated response types
-T = TypeVar("T", bound=BaseModel)
+T = TypeVar("T", bound=_PaginatedResponse)
 
 
 class Octopy:
@@ -83,13 +93,17 @@ class Octopy:
         """Close the HTTP client connection."""
         await self.client.aclose()
 
-    async def _get_url(self, url: str, retries: int = MAX_RETRIES) -> httpx.Response:
-        """Fetch data from an arbitrary URL with retry logic.
-
-        This is used internally for pagination to follow 'next' URLs.
+    async def _get_url(
+        self,
+        url: str,
+        params: dict[str, Any] | None = None,
+        retries: int = MAX_RETRIES
+    ) -> httpx.Response:
+        """Fetch data from a URL with retry logic.
 
         Args:
             url: Full URL to fetch (can be absolute or relative to base URL).
+            params: Optional query parameters to include in the request.
             retries: Number of retry attempts for transient errors.
 
         Returns:
@@ -106,7 +120,7 @@ class Octopy:
                 logger.debug(
                     "GET request to: %s (attempt %d/%d)", url, attempt + 1, retries + 1
                 )
-                response = await self.client.get(url)
+                response = await self.client.get(url, params=params)
 
                 if not (200 <= response.status_code < 300):
                     if response.status_code in RETRY_STATUS_CODES and attempt < retries:
@@ -156,8 +170,6 @@ class Octopy:
         Args:
             seconds: Number of seconds to sleep.
         """
-        import asyncio
-
         await asyncio.sleep(seconds)
 
     def _handle_response_error(self, response: httpx.Response) -> None:
@@ -216,7 +228,7 @@ class Octopy:
             next_url = getattr(page, "next", None)
 
         # Return a new response with all results
-        return type(response)(
+        return type(response)(  # type: ignore[call-arg]
             count=response.count,
             next=None,
             previous=None,
@@ -240,11 +252,7 @@ class Octopy:
         acc_num = account_number or self.settings.octopus_account_number
         url = f"/accounts/{acc_num}/"
 
-        response = await self.client.get(url)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url)
         data = response.json()
         return Account(**data)
 
@@ -264,11 +272,7 @@ class Octopy:
         url = "/industry/grid-supply-points/"
         params: dict[str, Any] = {"postcode": postcode}
 
-        response = await self.client.get(url, params=params)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url, params=params)
         data = response.json()
         results = data.get("results", [])
 
@@ -338,11 +342,7 @@ class Octopy:
         if group_by:
             params["group_by"] = group_by
 
-        response = await self.client.get(url, params=params)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url, params=params)
         data = response.json()
         consumption_response = ConsumptionResponse(**data)
 
@@ -392,11 +392,7 @@ class Octopy:
         if available_at:
             params["available_at"] = self._format_datetime(available_at)
 
-        response = await self.client.get(url, params=params)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url, params=params)
         data = response.json()
         return ProductsResponse(**data)
 
@@ -414,11 +410,7 @@ class Octopy:
         """
         url = f"/products/{product_code}/"
 
-        response = await self.client.get(url)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url)
         data = response.json()
         return ProductDetail(**data)
 
@@ -465,11 +457,7 @@ class Octopy:
         if period_to:
             params["period_to"] = self._format_datetime(period_to, end_of_day=True)
 
-        response = await self.client.get(url, params=params)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url, params=params)
         data = response.json()
         unit_rate_response = UnitRatesResponse(**data)
 
@@ -485,6 +473,7 @@ class Octopy:
         fuel: Literal["electricity", "gas"] = "electricity",
         period_from: date | datetime | None = None,
         period_to: date | datetime | None = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
         auto_paginate: bool = True,
     ) -> StandingChargesResponse:
         """Fetch standing charges for a tariff.
@@ -497,6 +486,7 @@ class Octopy:
             fuel: The fuel type, either 'electricity' or 'gas' (default: 'electricity').
             period_from: Start date for charges (inclusive).
             period_to: End date for charges (inclusive).
+            page_size: Number of results per page (default 100).
             auto_paginate: If True (default), automatically fetch all pages.
                 If False, only return the first page.
 
@@ -514,18 +504,14 @@ class Octopy:
                 f"/products/{product_code}/gas-tariffs/{tariff_code}/standing-charges/"
             )
 
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {"page_size": page_size}
 
         if period_from:
             params["period_from"] = self._format_datetime(period_from)
         if period_to:
             params["period_to"] = self._format_datetime(period_to, end_of_day=True)
 
-        response = await self.client.get(url, params=params)
-
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
-
+        response = await self._get_url(url, params=params)
         data = response.json()
         standing_charge_response = StandingChargesResponse(**data)
 
