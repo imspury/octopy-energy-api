@@ -210,9 +210,18 @@ class TestRetryLogic:
             assert "Network error" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_sleep_method(self, mock_settings: Settings) -> None:
+    async def test_sleep_method(
+        self, mock_settings: Settings, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test the _sleep method."""
+        import asyncio
         import time
+
+        # Restore the real _sleep, bypassing the autouse mock_sleep fixture
+        async def real_sleep(self: Octopy, seconds: float) -> None:
+            await asyncio.sleep(seconds)
+
+        monkeypatch.setattr(Octopy, "_sleep", real_sleep)
 
         client = Octopy(mock_settings)
         start = time.time()
@@ -229,10 +238,10 @@ class TestDateTimeFormatting:
         self, mock_settings: Settings
     ) -> None:
         """Test _format_datetime with timezone-aware datetime."""
-        from datetime import datetime, timezone
+        from datetime import UTC, datetime
 
         client = Octopy(mock_settings)
-        dt = datetime(2024, 3, 19, 10, 30, 0, tzinfo=timezone.utc)
+        dt = datetime(2024, 3, 19, 10, 30, 0, tzinfo=UTC)
 
         formatted = client._format_datetime(dt)
 
