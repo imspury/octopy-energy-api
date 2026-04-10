@@ -2,13 +2,13 @@
 
 # Standard library imports
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 # Third-party import
 from pydantic import BaseModel
 
 
-class Region(str, Enum):
+class Region(StrEnum):
     """Mapping of UK Electricity Grid Supply Point (GSP) Group IDs to geographic regions."""
 
     Eastern = "_A"
@@ -346,7 +346,7 @@ class TariffDetail(BaseModel):
 
 class PaymentOptions(BaseModel):
     """Model for payment options available for a tariff.
-    
+
     Attributes:
         direct_debit_monthly: Tariff details for monthly direct debit payment method, if available.
         prepayment: Tariff details for prepayment method, if available.
