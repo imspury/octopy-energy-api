@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-10
+
+### Added
+- Automatic retry logic for transient network errors (500, 502, 503, 504, timeouts)
+- Exponential backoff for retries with configurable attempts
+- Debug logging support for API requests and responses
+- Input validation for API keys (must start with sk_live_ or sk_test_)
+- Input validation for account numbers (must match A-XXXXXXXX format)
+- Constants module for centralised configuration values
+- Caching example demonstrating response caching with TTL
+- Performance tips section in README
+- Known Limitations section in README documenting API constraints
+- Package badges in README (PyPI version, Python versions, license, code style)
+
+### Changed
+- Improved test coverage from 98% to 99%
+- Updated README with clearer configuration instructions
+- Extracted magic numbers to named constants for better maintainability
+
+### Fixed
+- Validation tests updated to use proper API key formats
+
 ## [0.2.0] - 2026-03-23
 
 ### Added
