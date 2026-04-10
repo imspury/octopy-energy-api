@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from octopy import Octopy
 from octopy.config import get_settings
 
+
 async def main() -> None:
     """Fetch consumption data and calculate statistics."""
     settings = get_settings()
@@ -48,7 +49,7 @@ async def main() -> None:
                 total_kwh += kwh
                 date_str = interval.interval_start.strftime("%Y-%m-%d %A")
                 print(f"{date_str}: {kwh:>8.2f} kWh")
-            
+
             # Display statistics
             print("-" * 30)
             print(f"Total Consumption: {total_kwh:.2f} kWh")
@@ -56,10 +57,13 @@ async def main() -> None:
                 avg_kwh = total_kwh / len(consumption.results)
                 print(f"Average Daily Consumption: {avg_kwh:.2f} kWh")
     except IndexError:
-        print("Error: Could not find meter point or meter. Check your account has meters configured.")
+        print(
+            "Error: Could not find meter point or meter. Check your account has meters configured."
+        )
     except Exception as e:
         print(f"Error fetching consumption data: {e}")
         raise
+
 
 if __name__ == "__main__":
     asyncio.run(main())
