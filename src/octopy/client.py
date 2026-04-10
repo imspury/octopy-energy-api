@@ -1,4 +1,5 @@
 # Standard library imports
+import logging
 from datetime import date, datetime
 from typing import Any, Literal, TypeVar
 
@@ -8,16 +9,25 @@ from pydantic import BaseModel
 
 # Custom imports
 from octopy.config import Settings
+from octopy.constants import (
+    DEFAULT_PAGE_SIZE,
+    DEFAULT_TIMEOUT,
+    MAX_RETRIES,
+    RETRY_BACKOFF_FACTOR,
+    RETRY_STATUS_CODES,
+)
 from octopy.exceptions import OctopusAPIError, OctopusAuthError
 from octopy.models import (
     Account,
-    Region,
     ConsumptionResponse,
-    ProductsResponse,
     ProductDetail,
-    UnitRatesResponse,
+    ProductsResponse,
+    Region,
     StandingChargesResponse,
+    UnitRatesResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 # TypeVar for paginated response types
 T = TypeVar("T", bound=BaseModel)
@@ -44,7 +54,11 @@ class Octopy:
         self.client = httpx.AsyncClient(
             base_url=settings.octopus_api_base_url,
             auth=(settings.octopus_api_key, ""),
-            timeout=30.0,
+            timeout=DEFAULT_TIMEOUT,
+        )
+        logger.debug(
+            "Initialised Octopy client with base URL: %s",
+            settings.octopus_api_base_url,
         )
 
     async def __aenter__(self) -> "Octopy":
@@ -69,13 +83,14 @@ class Octopy:
         """Close the HTTP client connection."""
         await self.client.aclose()
 
-    async def _get_url(self, url: str) -> httpx.Response:
-        """Fetch data from an arbitrary URL.
+    async def _get_url(self, url: str, retries: int = MAX_RETRIES) -> httpx.Response:
+        """Fetch data from an arbitrary URL with retry logic.
 
         This is used internally for pagination to follow 'next' URLs.
 
         Args:
             url: Full URL to fetch (can be absolute or relative to base URL).
+            retries: Number of retry attempts for transient errors.
 
         Returns:
             The HTTP response object.
@@ -84,12 +99,66 @@ class Octopy:
             OctopusAuthError: If authentication fails.
             OctopusAPIError: If the API returns a non-2xx response.
         """
-        response = await self.client.get(url)
+        last_exception = None
 
-        if not (200 <= response.status_code < 300):
-            self._handle_response_error(response)
+        for attempt in range(retries + 1):
+            try:
+                logger.debug(
+                    "GET request to: %s (attempt %d/%d)", url, attempt + 1, retries + 1
+                )
+                response = await self.client.get(url)
 
-        return response
+                if not (200 <= response.status_code < 300):
+                    if response.status_code in RETRY_STATUS_CODES and attempt < retries:
+                        wait_time = RETRY_BACKOFF_FACTOR**attempt
+                        logger.warning(
+                            "Retryable error %d, waiting %.1fs before retry %d/%d",
+                            response.status_code,
+                            wait_time,
+                            attempt + 1,
+                            retries,
+                        )
+                        await self._sleep(wait_time)
+                        continue
+                    self._handle_response_error(response)
+
+                logger.debug("GET request successful: %s", url)
+                return response
+
+            except (httpx.TimeoutException, httpx.NetworkError) as e:
+                last_exception = e
+                if attempt < retries:
+                    wait_time = RETRY_BACKOFF_FACTOR**attempt
+                    logger.warning(
+                        "Network error (%s), waiting %.1fs before retry %d/%d",
+                        type(e).__name__,
+                        wait_time,
+                        attempt + 1,
+                        retries,
+                    )
+                    await self._sleep(wait_time)
+                    continue
+                logger.error("Network error after %d retries: %s", retries, str(e))
+                raise OctopusAPIError(
+                    status_code=0, detail=f"Network error: {str(e)}"
+                ) from e
+
+        if last_exception:
+            raise OctopusAPIError(
+                status_code=0, detail=f"Request failed after {retries} retries"
+            ) from last_exception
+
+        raise OctopusAPIError(status_code=0, detail="Request failed")
+
+    async def _sleep(self, seconds: float) -> None:
+        """Sleep for a specified duration (can be mocked in tests).
+
+        Args:
+            seconds: Number of seconds to sleep.
+        """
+        import asyncio
+
+        await asyncio.sleep(seconds)
 
     def _handle_response_error(self, response: httpx.Response) -> None:
         """Handle non-2xx responses from the API.
@@ -184,7 +253,7 @@ class Octopy:
 
         Args:
             postcode: The postcode to look up.
-        
+
         Returns:
             A Region enum representing the GSP region identifier.
 
@@ -199,7 +268,7 @@ class Octopy:
 
         if not (200 <= response.status_code < 300):
             self._handle_response_error(response)
-        
+
         data = response.json()
         results = data.get("results", [])
 
@@ -216,7 +285,7 @@ class Octopy:
         fuel: Literal["electricity", "gas"] = "electricity",
         period_from: date | datetime | None = None,
         period_to: date | datetime | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
         order_by: str | None = None,
         group_by: str | None = None,
         auto_paginate: bool = True,
@@ -360,7 +429,7 @@ class Octopy:
         fuel: Literal["electricity", "gas"] = "electricity",
         period_from: date | datetime | None = None,
         period_to: date | datetime | None = None,
-        page_size: int = 100,
+        page_size: int = DEFAULT_PAGE_SIZE,
         auto_paginate: bool = True,
     ) -> UnitRatesResponse:
         """Fetch unit rates for a tariff.
@@ -462,5 +531,5 @@ class Octopy:
 
         if auto_paginate and standing_charge_response.next:
             return await self._auto_paginate_response(standing_charge_response)
-        
+
         return standing_charge_response
