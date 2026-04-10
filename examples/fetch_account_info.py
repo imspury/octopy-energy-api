@@ -31,12 +31,14 @@ async def main() -> None:
                 ]
                 print(f"  Address: {', '.join(line for line in address_parts if line)}")
                 print(f"  Postcode: {property.postcode}")
-                print(f"  Region: {await client.get_grid_supply_point(property.postcode)}")
+                print(
+                    f"  Region: {await client.get_grid_supply_point(property.postcode)}"
+                )
                 print()
 
                 # Display electricity meters
                 if property.electricity_meter_points:
-                    print(f"  Electricity Meter Points:")
+                    print("  Electricity Meter Points:")
                     for emp in property.electricity_meter_points:
                         print(f"    MPAN: {emp.mpan}")
                         for meter in emp.meters:
@@ -48,7 +50,7 @@ async def main() -> None:
 
                 # Display gas meters
                 if property.gas_meter_points:
-                    print(f"  Gas Meter Points:")
+                    print("  Gas Meter Points:")
                     for gmp in property.gas_meter_points:
                         print(f"    MPRN: {gmp.mprn}")
                         for meter in gmp.meters:
